@@ -109,13 +109,13 @@ batch_size = 50
 n_classes = 7  # FER total classes
 dropout = 0.75  # Dropout, probability to keep units
 
-train_features,train_labels = load_dataset("Data/training.csv")
+train_features,train_labels = load_dataset("training.csv")
 train_features = train_features.astype(int)
 train_features = train_features/255.0
-test_features,test_labels = load_dataset("Data/test.csv")
+test_features,test_labels = load_dataset("test.csv")
 test_features = test_features.astype(int)
 test_features = test_features/255.0
-validation_features,validation_labels = load_dataset("Data/testprivate.csv")
+validation_features,validation_labels = load_dataset("testprivate.csv")
 validation_features = validation_features.astype(int)
 validation_features = validation_features/255.0
 
@@ -174,10 +174,18 @@ with tf.Session() as sess:
                 x: batch_x,
                 y: batch_y,
                 keep_prob: 1.})
-            valid_acc = sess.run(accuracy, feed_dict={
-                x: validation_features,
-                y: validation_labels,
-                keep_prob: 1.})
+            accuracy_addition = 0
+            size_total = 0
+            total_no_of_batches_validation = int(validation_features.shape[0] / batch_size)
+            for batch in range(total_no_of_batches_validation):
+                batch_x, batch_y = get_next_batch(validation_features,validation_labels,batch, batch_size)
+                print(batch_x.shape,batch_y.shape)
+                accuracy_addition += sess.run(accuracy, feed_dict={
+                    x: validation_features,
+                    y: validation_labels,
+                    keep_prob: 1.})
+                size_total += batch_x.shape[0]
+            valid_acc = accuracy_addition/size_total
 
             print('Epoch {:>2}, Batch {:>3} -'
                   'Loss: {:>10.4f} Validation Accuracy: {:.6f}'.format(
@@ -191,4 +199,16 @@ with tf.Session() as sess:
         x: test_features,
         y: test_labels,
         keep_prob: 1.})
+    accuracy_addition = 0
+    size_total = 0
+    total_no_of_batches_test = int(test_features.shape[0] / batch_size)
+    for batch in range(total_no_of_batches_test):
+        batch_x, batch_y = get_next_batch(test_features,test_labels,batch, batch_size)
+        print(batch_x.shape,batch_y.shape)
+        accuracy_addition += sess.run(accuracy, feed_dict={
+            x: batch_x,
+            y: batch_y,
+            keep_prob: 1.})
+    size_total += batch_x.shape[0]
+    test_acc = accuracy_addition/size_total
     print('Testing Accuracy: {}'.format(test_acc))
